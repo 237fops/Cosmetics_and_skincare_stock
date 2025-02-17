@@ -2,6 +2,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
+import javax.swing.JOptionPane;
+import javax.swing.*;
+import java.sql.*;
+import dao.DatabaseConnection;
+import java.awt.HeadlessException;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 
 /**
  *
@@ -9,11 +16,22 @@
  */
 public class ManageCustomer extends javax.swing.JFrame {
 
+    private int customerPk = 0;
+
     /**
      * Creates new form ManageCustomer
      */
     public ManageCustomer() {
         initComponents();
+        setLocationRelativeTo(null);
+    }
+
+    private boolean validateFields() {
+        if (txtName.getText().equals("") && !txtMobileNumber.getText().equals("") && !txtEmail.getText().equals("")) {
+            return false;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -41,6 +59,11 @@ public class ManageCustomer extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                formComponentShown(evt);
+            }
+        });
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
@@ -55,6 +78,11 @@ public class ManageCustomer extends javax.swing.JFrame {
                 "ID", "Name", "Mobile Number", "Email"
             }
         ));
+        tableCustomer.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tableCustomerMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(tableCustomer);
 
         getContentPane().add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(28, 72, -1, -1));
@@ -91,14 +119,29 @@ public class ManageCustomer extends javax.swing.JFrame {
 
         btnUpdate.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         btnUpdate.setText("Update");
+        btnUpdate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnUpdateActionPerformed(evt);
+            }
+        });
         getContentPane().add(btnUpdate, new org.netbeans.lib.awtextra.AbsoluteConstraints(588, 323, -1, -1));
 
         btnReset.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         btnReset.setText("Reset");
+        btnReset.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnResetActionPerformed(evt);
+            }
+        });
         getContentPane().add(btnReset, new org.netbeans.lib.awtextra.AbsoluteConstraints(685, 323, -1, -1));
 
         btnClose.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         btnClose.setText("Close");
+        btnClose.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCloseActionPerformed(evt);
+            }
+        });
         getContentPane().add(btnClose, new org.netbeans.lib.awtextra.AbsoluteConstraints(769, 323, -1, -1));
 
         pack();
@@ -106,11 +149,106 @@ public class ManageCustomer extends javax.swing.JFrame {
 
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
         // TODO add your handling code here:
+        String name = txtName.getText();
+        String mobileNumber = txtMobileNumber.getText();
+        String email = txtEmail.getText();
+
+        if (validateFields()) {
+            JOptionPane.showMessageDialog(null, "All fields are required");
+        } else {
+            try {
+                Connection conn = DatabaseConnection.getconn();
+                PreparedStatement ps = conn.prepareStatement("insert into customer(name,mobileNumber,email) values(?,?,?)");
+                ps.setString(1, name);
+                ps.setString(2, mobileNumber);
+                ps.setString(3, email);
+                ps.executeUpdate();
+                JOptionPane.showMessageDialog(null, "Customer added successfully");
+                setVisible(false);
+                new ManageCustomer().setVisible(true);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, e);
+            }
+        }
     }//GEN-LAST:event_btnSaveActionPerformed
 
     private void txtMobileNumberActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMobileNumberActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtMobileNumberActionPerformed
+
+    private void formComponentShown(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_formComponentShown
+        // TODO add your handling code here:
+        DefaultTableModel model = (DefaultTableModel) tableCustomer.getModel();
+        try {
+            Connection conn = DatabaseConnection.getconn();
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery("select *from customer");
+            while (rs.next()) {
+                model.addRow(new Object[]{rs.getString("customer_pk"), rs.getString("name"), rs.getString("mobileNumber"), rs.getString("email")});
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e);
+        }
+        btnUpdate.setEnabled(false);
+    }//GEN-LAST:event_formComponentShown
+
+    private void btnCloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
+        // TODO add your handling code here:
+        setVisible(false);
+    }//GEN-LAST:event_btnCloseActionPerformed
+
+    private void btnResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnResetActionPerformed
+        // TODO add your handling code here:
+        setVisible(false);
+        new ManageCustomer().setVisible(true);
+    }//GEN-LAST:event_btnResetActionPerformed
+
+    private void tableCustomerMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tableCustomerMouseClicked
+        // TODO add your handling code here:
+        int index = tableCustomer.getSelectedRow();
+        TableModel model = tableCustomer.getModel();
+        String id = model.getValueAt(index, 0).toString();
+        customerPk = Integer.parseInt(id);
+
+        String name = model.getValueAt(index, 1).toString();
+        txtName.setText(name);
+
+        String mobileNumber = model.getValueAt(index, 2).toString();
+        txtMobileNumber.setText(mobileNumber);
+
+        String email = model.getValueAt(index, 1).toString();
+        txtEmail.setText(email);
+
+        btnSave.setEnabled(false);
+        btnUpdate.setEnabled(true);
+        // btnDelete.setEnabled(true);
+    }//GEN-LAST:event_tableCustomerMouseClicked
+
+    private void btnUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUpdateActionPerformed
+        // TODO add your handling code here:
+         String name = txtName.getText();
+        String mobileNumber = txtMobileNumber.getText();
+        String email = txtEmail.getText();
+
+        if (validateFields()) {
+            JOptionPane.showMessageDialog(null, "All fields are required");
+        } else {
+            try {
+                Connection conn = DatabaseConnection.getconn();
+                PreparedStatement ps = conn.prepareStatement("update customer set name=?,mobileNumber=?,email=? where customer_pk=?  ");
+                ps.setString(1, name);
+                ps.setString(2, mobileNumber);
+                ps.setString(3, email);
+                ps.setInt(4, customerPk);
+                ps.executeUpdate();
+                JOptionPane.showMessageDialog(null, "Customer updated successfully");
+                setVisible(false);
+                new ManageCustomer().setVisible(true);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, e);
+            }
+        }
+    }//GEN-LAST:event_btnUpdateActionPerformed
 
     /**
      * @param args the command line arguments
